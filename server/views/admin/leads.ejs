@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Leads | Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Figtree:ital,wght@0,400;0,600;0,700&display=swap" rel="stylesheet">
+<%- include('_shared-css') %>
+</head>
+<body>
+<%- include('_nav', { displayName }) %>
+<div class="page wrap">
+  <h1 class="title">Leads</h1>
+  <div class="tabs">
+    <a href="#discovery" onclick="showTab('discovery')" id="tab-discovery" class="active">Discovery Calls (<%= discoveryLeads.length %>)</a>
+    <a href="#scorecard" onclick="showTab('scorecard')" id="tab-scorecard">Scorecard (<%= scorecardLeads.length %>)</a>
+  </div>
+
+  <div id="panel-discovery">
+    <% if (discoveryLeads.length === 0) { %>
+      <div class="empty">No discovery call requests yet.</div>
+    <% } else { %>
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Team Size</th><th>Industry</th><th>Challenge</th><th>Submitted</th></tr></thead>
+      <tbody>
+        <% discoveryLeads.forEach(function(l){ %>
+        <tr>
+          <td><%= l.name %></td>
+          <td><a href="mailto:<%= l.email %>"><%= l.email %></a></td>
+          <td><%= l.role %></td>
+          <td><%= l.teamSize %></td>
+          <td><%= l.industry %></td>
+          <td style="max-width:320px"><%= l.challenge %></td>
+          <td><%= l.createdAt.toLocaleString() %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+
+  <div id="panel-scorecard" style="display:none">
+    <% if (scorecardLeads.length === 0) { %>
+      <div class="empty">No scorecard completions yet.</div>
+    <% } else { %>
+    <table>
+      <thead><tr><th>Name</th><th>Email</th><th>Company</th><th>Role</th><th>Overall</th><th>Result</th><th>Recommended</th><th>Submitted</th></tr></thead>
+      <tbody>
+        <% scorecardLeads.forEach(function(l){ %>
+        <tr>
+          <td><%= l.name %></td>
+          <td><a href="mailto:<%= l.email %>"><%= l.email %></a></td>
+          <td><%= l.company %></td>
+          <td><%= l.role %></td>
+          <td><%= l.overallPct %>%</td>
+          <td><%= l.resultType %></td>
+          <td><%= l.recommendedProgramme %></td>
+          <td><%= l.createdAt.toLocaleString() %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+</div>
+<script>
+function showTab(name){
+  document.getElementById('panel-discovery').style.display = name === 'discovery' ? '' : 'none';
+  document.getElementById('panel-scorecard').style.display = name === 'scorecard' ? '' : 'none';
+  document.getElementById('tab-discovery').classList.toggle('active', name === 'discovery');
+  document.getElementById('tab-scorecard').classList.toggle('active', name === 'scorecard');
+}
+</script>
+</body>
+</html>

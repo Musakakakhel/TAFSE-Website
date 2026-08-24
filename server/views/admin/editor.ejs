@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= post ? 'Edit Post' : 'New Post' %> | Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Figtree:ital,wght@0,400;0,600;0,700&display=swap" rel="stylesheet">
+<link href="/vendor/quill/quill.snow.css" rel="stylesheet">
+<%- include('_shared-css') %>
+<style>
+  .ql-editor{min-height:300px;font-size:15px}
+  #thumbPreviewImg{display:none}
+  .status{margin-top:14px;font-size:13.5px}
+  .status.ok{color:#1C7A6B}
+  .status.err{color:var(--passion-deep)}
+</style>
+</head>
+<body>
+<%- include('_nav', { displayName }) %>
+<div class="page wrap">
+  <h1 class="title"><%= post ? 'Edit Post' : 'New Post' %></h1>
+  <div class="form-card">
+    <label for="title">Title</label>
+    <input type="text" id="title" value="<%= post ? post.title.replace(/\"/g, '&quot;') : '' %>">
+
+    <div class="row2">
+      <div>
+        <label for="category">Category</label>
+        <select id="category">
+          <option value="Blog" <%= (!post || post.category === 'Blog') ? 'selected' : '' %>>Blog</option>
+          <option value="Podcast" <%= (post && post.category === 'Podcast') ? 'selected' : '' %>>Podcast</option>
+        </select>
+      </div>
+      <div>
+        <label for="slug">Slug</label>
+        <input type="text" id="slug" value="<%= post ? post.slug : '' %>" placeholder="auto-generated from title">
+      </div>
+    </div>
+
+    <label for="topic">Topic <span class="hint" style="display:inline">(shown as the headline tag on the post itself, e.g. "Negotiation", "Leadership")</span></label>
+    <input type="text" id="topic" value="<%= post ? post.topic : '' %>" placeholder="e.g. Negotiation">
+
+    <label for="excerpt">Excerpt / meta description</label>
+    <textarea id="excerpt" rows="2"><%= post ? post.excerpt : '' %></textarea>
+
+    <label for="thumb">Thumbnail image</label>
+    <input type="file" id="thumb" accept="image/*">
+    <img id="thumbPreviewImg" class="thumbpreview" src="<%= post && post.thumbnailUrl ? post.thumbnailUrl : '' %>" style="<%= post && post.thumbnailUrl ? 'display:block' : '' %>">
+    <input type="hidden" id="thumbnailUrl" value="<%= post && post.thumbnailUrl ? post.thumbnailUrl : '' %>">
+
+    <label for="editor">Body</label>
+    <div id="editor"><%- post ? post.bodyHtml : '' %></div>
+
+    <label style="margin-top:20px">
+      <input type="checkbox" id="published" <%= (!post || post.published) ? 'checked' : '' %> style="width:auto;display:inline-block;margin-right:6px">
+      Published (visible on the live site)
+    </label>
+
+    <div style="margin-top:24px;display:flex;gap:12px;align-items:center">
+      <button type="button" class="btn" id="saveBtn"><%= post ? 'Save Changes' : 'Publish Post' %></button>
+      <a class="btn secondary" href="/admin/posts">Cancel</a>
+      <span class="status" id="statusMsg"></span>
+    </div>
+  </div>
+</div>
+
+<script src="/vendor/quill/quill.js"></script>
+<script>
+var quill = new Quill('#editor', { theme: 'snow' });
+var postId = <%= post ? post.id : 'null' %>;
+
+document.getElementById('thumb').addEventListener('change', function(e){
+  var file = e.target.files[0];
+  if(!file) return;
+  var statusEl = document.getElementById('statusMsg');
+  statusEl.className = 'status'; statusEl.textContent = 'Uploading image...';
+  var fd = new FormData();
+  fd.append('file', file);
+  fetch('/api/uploads', { method: 'POST', body: fd })
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(data.error){ throw new Error(data.error); }
+      document.getElementById('thumbnailUrl').value = data.url;
+      var img = document.getElementById('thumbPreviewImg');
+      img.src = data.url; img.style.display = 'block';
+      statusEl.textContent = 'Image uploaded.';
+      statusEl.className = 'status ok';
+    })
+    .catch(function(err){
+      statusEl.textContent = 'Upload failed: ' + err.message;
+      statusEl.className = 'status err';
+    });
+});
+
+document.getElementById('saveBtn').addEventListener('click', function(){
+  var statusEl = document.getElementById('statusMsg');
+  var payload = {
+    title: document.getElementById('title').value.trim(),
+    category: document.getElementById('category').value,
+    topic: document.getElementById('topic').value.trim(),
+    slug: document.getElementById('slug').value.trim(),
+    excerpt: document.getElementById('excerpt').value.trim(),
+    thumbnailUrl: document.getElementById('thumbnailUrl').value || null,
+    bodyHtml: quill.root.innerHTML,
+    published: document.getElementById('published').checked
+  };
+  if(!payload.title || !payload.excerpt){
+    statusEl.textContent = 'Title and excerpt are required.';
+    statusEl.className = 'status err';
+    return;
+  }
+  statusEl.textContent = 'Saving...';
+  statusEl.className = 'status';
+  var url = postId ? ('/api/posts/' + postId) : '/api/posts';
+  var method = postId ? 'PUT' : 'POST';
+  fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
+    .then(function(r){ if(!r.ok) return r.json().then(function(d){ throw new Error(d.error || 'Save failed'); }); return r.json(); })
+    .then(function(){ window.location.href = '/admin/posts'; })
+    .catch(function(err){
+      statusEl.textContent = err.message;
+      statusEl.className = 'status err';
+    });
+});
+</script>
+</body>
+</html>

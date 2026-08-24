@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Posts | Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Figtree:ital,wght@0,400;0,600;0,700&display=swap" rel="stylesheet">
+<%- include('_shared-css') %>
+</head>
+<body>
+<%- include('_nav', { displayName }) %>
+<div class="page wrap">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+    <h1 class="title" style="margin-bottom:0">Blog Posts</h1>
+    <a class="btn" href="/admin/posts/new">+ New Post</a>
+  </div>
+
+  <% if (posts.length === 0) { %>
+    <div class="empty">No posts yet.</div>
+  <% } else { %>
+  <table>
+    <thead>
+      <tr><th>Title</th><th>Category</th><th>Status</th><th>Updated</th><th>By</th><th>Actions</th></tr>
+    </thead>
+    <tbody>
+      <% posts.forEach(function(p){ %>
+      <tr>
+        <td><%= p.title %><% if (p.externalUrl) { %> <span class="hint">(external)</span><% } %></td>
+        <td><%= p.category %></td>
+        <td><span class="badge <%= p.published ? 'pub' : 'draft' %>"><%= p.published ? 'Published' : 'Draft' %></span></td>
+        <td><%= p.updatedAt.toLocaleDateString() %></td>
+        <td><%= p.updatedBy ? p.updatedBy.displayName : '—' %></td>
+        <td class="actions">
+          <a href="/admin/posts/<%= p.id %>/edit">Edit</a>
+          <% if (!p.externalUrl) { %><a href="/blog-posts/<%= p.slug %>.html" target="_blank">View</a><% } %>
+          <button type="button" class="linkbtn del-btn" data-id="<%= p.id %>">Delete</button>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<script>
+document.querySelectorAll('.del-btn').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    if(!confirm('Delete this post? This cannot be undone.')) return;
+    fetch('/api/posts/' + btn.dataset.id, { method: 'DELETE' })
+      .then(function(r){ if(r.ok) location.reload(); else alert('Could not delete.'); });
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  username     String   @unique
+  passwordHash String
+  displayName  String
+  mustChangePw Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  postsCreated Post[] @relation("PostCreatedBy")
+  postsUpdated Post[] @relation("PostUpdatedBy")
+}
+
+model Post {
+  id            Int       @id @default(autoincrement())
+  slug          String    @unique
+  title         String
+  excerpt       String
+  category      String
+  topic         String    @default("")
+  bodyHtml      String    @default("")
+  thumbnailUrl  String?
+  externalUrl   String?
+  published     Boolean   @default(true)
+  publishedAt   DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  createdById   Int?
+  updatedById   Int?
+  createdBy     User?     @relation("PostCreatedBy", fields: [createdById], references: [id])
+  updatedBy     User?     @relation("PostUpdatedBy", fields: [updatedById], references: [id])
+}
+
+model DiscoveryLead {
+  id         Int      @id @default(autoincrement())
+  name       String
+  email      String
+  role       String
+  teamSize   String
+  industry   String
+  challenge  String
+  scorecard  String?
+  createdAt  DateTime @default(now())
+}
+
+model ScorecardLead {
+  id                  Int      @id @default(autoincrement())
+  name                String
+  email               String
+  company             String
+  role                String
+  phone               String
+  totalScore          Int
+  overallPct          Int
+  clarityScore        Int
+  capabilityScore     Int
+  cultureScore        Int
+  resultType          String
+  recommendedProgramme String
+  createdAt           DateTime @default(now())
+}
